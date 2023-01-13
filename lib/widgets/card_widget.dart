@@ -50,10 +50,10 @@ class CardWidget extends StatelessWidget {
                           child: Opacity(
                             opacity: shouldFade ? 0 : 1,
                             child: AnimatedBuilder(
-                              animation: animationController!.view,
+                              animation: animationController.view,
                               builder: (buildContext, child) {
                                 return AnimatedOpacity(
-                                    opacity: animationController!.value,
+                                    opacity: animationController.value,
                                     duration: const Duration(milliseconds: 100),
                                     child: child);
                               },

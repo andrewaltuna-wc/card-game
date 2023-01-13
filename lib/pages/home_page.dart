@@ -291,10 +291,10 @@ class _HomePageState extends State<HomePage>
                     ],
                     if (_cardGame.lastFiveCards.isNotEmpty)
                       AnimatedBuilder(
-                        animation: _fadeInOutAnimationController!.view,
+                        animation: _fadeInOutAnimationController.view,
                         builder: (buildContext, child) {
                           return AnimatedOpacity(
-                              opacity: _fadeInOutAnimationController!.value,
+                              opacity: _fadeInOutAnimationController.value,
                               duration: const Duration(milliseconds: 100),
                               child: child);
                         },
