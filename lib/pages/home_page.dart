@@ -1,5 +1,6 @@
 import 'package:cardgame/logic/card_game.dart';
 import 'package:cardgame/models/card_model.dart';
+import 'package:cardgame/widgets/card_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -10,7 +11,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   late double _deviceHeight, _deviceWidth;
 
   bool? _isPortrait;
@@ -18,12 +20,26 @@ class _HomePageState extends State<HomePage> {
   bool _shouldFade = false;
   bool _disableButtons = true;
   bool _shouldFadeHeart = false;
+  late AnimationController _fadeInOutAnimationController;
 
   @override
   void initState() {
+    super.initState();
     // Initializes card game
     _cardGame.newGame();
-    super.initState();
+    _fadeInOutAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+      lowerBound: 0.3,
+      upperBound: 1,
+    );
+    _fadeInOutAnimationController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _fadeInOutAnimationController.dispose();
   }
 
   @override
@@ -72,7 +88,18 @@ class _HomePageState extends State<HomePage> {
       children: [
         _scoreWidget(),
         _livesWidget(heartSize: 30),
-        _cardWidget(height: _deviceHeight * 0.3),
+        CardWidget(
+          height: _deviceHeight * 0.3,
+          imgPath: _cardGame.currentCard().imgPath(),
+          shouldFade: _shouldFade,
+          function: () {
+            setState(() {
+              _shouldFade = true;
+              _disableButtons = false;
+            });
+          },
+          animationController: _fadeInOutAnimationController,
+        ),
         _gameButtonsWidget(sizedBoxHeight: 5),
         _cardHistoryWidget(
             containerHeight: _deviceHeight * 0.12, sizedBoxWidth: 5),
@@ -91,7 +118,18 @@ class _HomePageState extends State<HomePage> {
             sizedBoxWidth: 5,
           ),
         ),
-        _cardWidget(height: _deviceHeight * 0.6),
+        CardWidget(
+          height: _deviceHeight * 0.6,
+          imgPath: _cardGame.currentCard().imgPath(),
+          shouldFade: _shouldFade,
+          function: () {
+            setState(() {
+              _disableButtons = false;
+              _shouldFade = true;
+            });
+          },
+          animationController: _fadeInOutAnimationController,
+        ),
         Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -127,7 +165,7 @@ class _HomePageState extends State<HomePage> {
   Widget _livesWidget({required double heartSize}) {
     return AnimatedOpacity(
       opacity: _shouldFadeHeart ? 0 : 1,
-      duration: Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 400),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -150,69 +188,69 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _cardWidget({required double height}) {
-    return Stack(
-      children: [
-        SizedBox(
-          height: height,
-          child: Image.asset(_cardGame.currentCard().imgPath()),
-        ),
-        AnimatedOpacity(
-          opacity: _shouldFade ? 0 : 1,
-          duration: _shouldFade
-              ? const Duration(milliseconds: 500)
-              : const Duration(milliseconds: 0),
-          child: SizedBox(
-            height: height,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Image.asset("assets/cards/card_back.png"),
-                Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _shouldFade
-                            ? null
-                            : () {
-                                setState(() {
-                                  _disableButtons = false;
-                                  _shouldFade = true;
-                                });
-                              },
-                        child: Center(
-                          child: Opacity(
-                            opacity: _shouldFade ? 0 : 1,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: const Color.fromRGBO(0, 0, 0, 0.8),
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                              child: const Text(
-                                "TAP TO FLIP",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _cardWidget({required double height}) {
+  //   return Stack(
+  //     children: [
+  //       SizedBox(
+  //         height: height,
+  //         child: Image.asset(_cardGame.currentCard().imgPath()),
+  //       ),
+  //       AnimatedOpacity(
+  //         opacity: _shouldFade ? 0 : 1,
+  //         duration: _shouldFade
+  //             ? const Duration(milliseconds: 500)
+  //             : const Duration(milliseconds: 0),
+  //         child: SizedBox(
+  //           height: height,
+  //           child: Stack(
+  //             alignment: Alignment.center,
+  //             children: [
+  //               Image.asset("assets/cards/card_back.png"),
+  //               Positioned.fill(
+  //                 child: ClipRRect(
+  //                   borderRadius: BorderRadius.circular(10),
+  //                   child: Material(
+  //                     color: Colors.transparent,
+  //                     child: InkWell(
+  //                       onTap: _shouldFade
+  //                           ? null
+  //                           : () {
+  //                               setState(() {
+  //                                 _disableButtons = false;
+  //                                 _shouldFade = true;
+  //                               });
+  //                             },
+  //                       child: Center(
+  //                         child: Opacity(
+  //                           opacity: _shouldFade ? 0 : 1,
+  //                           child: Container(
+  //                             padding: const EdgeInsets.symmetric(
+  //                                 horizontal: 15, vertical: 10),
+  //                             decoration: BoxDecoration(
+  //                               color: const Color.fromRGBO(0, 0, 0, 0.8),
+  //                               borderRadius: BorderRadius.circular(50),
+  //                             ),
+  //                             child: const Text(
+  //                               "TAP TO FLIP",
+  //                               style: TextStyle(
+  //                                 color: Colors.white,
+  //                                 fontWeight: FontWeight.w900,
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               )
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buttonWidget({required String text, required bool cond}) {
     return ElevatedButton(
@@ -282,48 +320,61 @@ class _HomePageState extends State<HomePage> {
   Widget _cardHistoryWidget(
       {required double containerHeight, required double sizedBoxWidth}) {
     return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: _deviceWidth,
-          color: Colors.indigo,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: Column(
-            children: [
-              const Text(
-                "CARD HISTORY:",
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: containerHeight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                      color: const Color.fromRGBO(0, 0, 0, 0.4),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black),
-                        BoxShadow(
-                            color: Colors.indigo,
-                            spreadRadius: 0,
-                            blurRadius: 10)
-                      ]),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(width: sizedBoxWidth), // Initial spacing
-                      for (DeckCard card in _cardGame.lastFiveCards) ...[
-                        Image.asset(card.imgPath()),
-                        SizedBox(width: sizedBoxWidth)
-                      ]
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: _deviceWidth,
+        color: Colors.indigo,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: Column(
+          children: [
+            const Text(
+              "CARD HISTORY:",
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: containerHeight,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                    color: const Color.fromRGBO(0, 0, 0, 0.4),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black),
+                      BoxShadow(
+                          color: Colors.indigo, spreadRadius: 0, blurRadius: 10)
+                    ]),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(width: sizedBoxWidth), // Initial spacing
+                    for (DeckCard card in _cardGame.lastFiveCards) ...[
+                      Image.asset(card.imgPath()),
+                      SizedBox(width: sizedBoxWidth)
                     ],
-                  ),
+                    if (_cardGame.lastFiveCards.isNotEmpty)
+                      AnimatedBuilder(
+                        animation: _fadeInOutAnimationController!.view,
+                        builder: (buildContext, child) {
+                          return AnimatedOpacity(
+                              opacity: _fadeInOutAnimationController!.value,
+                              duration: const Duration(milliseconds: 100),
+                              child: child);
+                        },
+                        child: const Icon(
+                          Icons.arrow_left,
+                          color: Colors.red,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ));
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future _gameResetDialog({bool? isWin}) {
