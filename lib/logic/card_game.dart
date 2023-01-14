@@ -34,18 +34,20 @@ class CardGame {
   }
 
   void nextCard() {
-    // Ensures only the last 5 cards are stored
-    if (lastFiveCards.length >= 5) {
-      lastFiveCards.removeAt(0);
-    }
-
-    lastFiveCards.add(currentCard());
     cards.removeAt(0);
 
     // Game ends if there is only one card left
     if (cards.length == 1) {
       isGameDone = true;
     }
+  }
+
+  void updateHistory() {
+    // Ensures only the last 5 cards are stored
+    if (lastFiveCards.length >= 5) {
+      lastFiveCards.removeAt(0);
+    }
+    lastFiveCards.add(currentCard());
   }
 
   void subtractLife() {

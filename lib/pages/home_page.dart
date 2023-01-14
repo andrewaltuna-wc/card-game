@@ -1,5 +1,7 @@
+import 'dart:math';
+
 import 'package:cardgame/logic/card_game.dart';
-import 'package:cardgame/models/card_model.dart';
+import 'package:cardgame/widgets/card_history_widget.dart';
 import 'package:cardgame/widgets/card_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -17,10 +19,12 @@ class _HomePageState extends State<HomePage>
 
   bool? _isPortrait;
   final CardGame _cardGame = CardGame();
-  bool _shouldFade = false;
   bool _disableButtons = true;
   bool _shouldFadeHeart = false;
+  bool _shouldFadeHistory = false;
   late AnimationController _fadeInOutAnimationController;
+  double _angle = 0;
+  final int _flipDuration = 500;
 
   @override
   void initState() {
@@ -88,18 +92,7 @@ class _HomePageState extends State<HomePage>
       children: [
         _scoreWidget(),
         _livesWidget(heartSize: 30),
-        CardWidget(
-          height: _deviceHeight * 0.3,
-          imgPath: _cardGame.currentCard().imgPath(),
-          shouldFade: _shouldFade,
-          function: () {
-            setState(() {
-              _shouldFade = true;
-              _disableButtons = false;
-            });
-          },
-          animationController: _fadeInOutAnimationController,
-        ),
+        _cardWidget(height: _deviceHeight * 0.3),
         _gameButtonsWidget(sizedBoxHeight: 5),
         _cardHistoryWidget(
             containerHeight: _deviceHeight * 0.12, sizedBoxWidth: 5),
@@ -113,23 +106,9 @@ class _HomePageState extends State<HomePage>
       children: [
         RotatedBox(
           quarterTurns: 3,
-          child: _cardHistoryWidget(
-            containerHeight: 80,
-            sizedBoxWidth: 5,
-          ),
+          child: _cardHistoryWidget(containerHeight: 90, sizedBoxWidth: 5),
         ),
-        CardWidget(
-          height: _deviceHeight * 0.6,
-          imgPath: _cardGame.currentCard().imgPath(),
-          shouldFade: _shouldFade,
-          function: () {
-            setState(() {
-              _disableButtons = false;
-              _shouldFade = true;
-            });
-          },
-          animationController: _fadeInOutAnimationController,
-        ),
+        _cardWidget(height: _deviceHeight * 0.6),
         Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -139,6 +118,33 @@ class _HomePageState extends State<HomePage>
           ],
         )
       ],
+    );
+  }
+
+  Widget _cardHistoryWidget(
+      {required double containerHeight, required double sizedBoxWidth}) {
+    return CardHistoryWidget(
+      shouldFadeHistory: _shouldFadeHistory,
+      lastFiveCards: _cardGame.lastFiveCards,
+      fadeInOutAnimationController: _fadeInOutAnimationController,
+      containerHeight: containerHeight,
+      sizedBoxWidth: sizedBoxWidth,
+    );
+  }
+
+  Widget _cardWidget({required double height}) {
+    return CardWidget(
+      height: height,
+      imgPath: _cardGame.currentCard().imgPath(),
+      angle: _angle,
+      flipDuration: _flipDuration,
+      function: () {
+        setState(() {
+          _flipCard();
+          _disableButtons = false;
+        });
+      },
+      animationController: _fadeInOutAnimationController,
     );
   }
 
@@ -194,25 +200,8 @@ class _HomePageState extends State<HomePage>
           ? null
           : () {
               _nextCard();
-              // If card isnt greater than or equal
               if (cond) {
-                setState(
-                  () {
-                    _cardGame.subtractLife();
-                    _shouldFadeHeart = true;
-
-                    // Heart animation
-                    Future.delayed(
-                      const Duration(milliseconds: 300),
-                      () => setState(() => _shouldFadeHeart = false),
-                    );
-
-                    if (_cardGame.isGameDone) {
-                      _gameResetDialog(isWin: false);
-                    }
-                  },
-                );
-                return;
+                return _wrongAnswer();
               }
               _cardGame.score++;
             },
@@ -253,66 +242,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Widget _cardHistoryWidget(
-      {required double containerHeight, required double sizedBoxWidth}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        width: _deviceWidth,
-        color: Colors.indigo,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        child: Column(
-          children: [
-            const Text(
-              "CARD HISTORY:",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: containerHeight,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                    color: const Color.fromRGBO(0, 0, 0, 0.4),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black),
-                      BoxShadow(
-                          color: Colors.indigo, spreadRadius: 0, blurRadius: 10)
-                    ]),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(width: sizedBoxWidth), // Initial spacing
-                    for (DeckCard card in _cardGame.lastFiveCards) ...[
-                      Image.asset(card.imgPath()),
-                      SizedBox(width: sizedBoxWidth)
-                    ],
-                    if (_cardGame.lastFiveCards.isNotEmpty)
-                      AnimatedBuilder(
-                        animation: _fadeInOutAnimationController.view,
-                        builder: (buildContext, child) {
-                          return AnimatedOpacity(
-                              opacity: _fadeInOutAnimationController.value,
-                              duration: const Duration(milliseconds: 100),
-                              child: child);
-                        },
-                        child: const Icon(
-                          Icons.arrow_left,
-                          color: Colors.red,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future _gameResetDialog({bool? isWin}) {
     return showDialog(
       context: context,
@@ -344,7 +273,7 @@ class _HomePageState extends State<HomePage>
   void _newGame() {
     _cardGame.newGame();
     setState(() {
-      _shouldFade = false;
+      _angle = 0;
       _disableButtons = true;
     });
     Navigator.pop(context);
@@ -352,13 +281,43 @@ class _HomePageState extends State<HomePage>
 
   void _nextCard() {
     setState(() {
-      _shouldFade = false;
+      _flipCard();
       _disableButtons = true;
-      _cardGame.nextCard();
+      _cardGame.updateHistory();
+      _shouldFadeHistory = true;
 
-      if (_cardGame.isWin()) {
-        _gameResetDialog(isWin: true);
-      }
+      Future.delayed(Duration(milliseconds: _flipDuration ~/ 2), () {
+        setState(() {
+          _shouldFadeHistory = false;
+          _cardGame.nextCard();
+          if (_cardGame.isWin()) {
+            _gameResetDialog(isWin: true);
+          }
+        });
+      });
     });
+  }
+
+  void _flipCard() {
+    _angle = (_angle + pi) % (2 * pi);
+  }
+
+  void _wrongAnswer() {
+    setState(
+      () {
+        _cardGame.subtractLife();
+        _shouldFadeHeart = true;
+
+        // Heart animation
+        Future.delayed(
+          const Duration(milliseconds: 300),
+          () => setState(() => _shouldFadeHeart = false),
+        );
+
+        if (_cardGame.isGameDone) {
+          _gameResetDialog(isWin: false);
+        }
+      },
+    );
   }
 }
