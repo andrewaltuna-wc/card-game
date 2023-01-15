@@ -29,8 +29,12 @@ class CardGame {
   }
 
   bool isLessThanCurrent() {
-    // Returns true if the current card is less than the previous
-    return cards[1].number < cards[0].number ? true : false;
+    if (cards.length > 1) {
+      // Returns true if the current card is less than the previous
+      return cards[1].number < cards[0].number ? true : false;
+    } else {
+      return true;
+    }
   }
 
   void nextCard() {

@@ -16,15 +16,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late double _deviceHeight, _deviceWidth;
+  late bool _isPortrait;
+  late AnimationController _fadeInOutAnimationController;
 
-  bool? _isPortrait;
   final CardGame _cardGame = CardGame();
+  final int _flipDuration = 500;
   bool _disableButtons = true;
   bool _shouldFadeHeart = false;
   bool _shouldFadeHistory = false;
-  late AnimationController _fadeInOutAnimationController;
   double _angle = 0;
-  final int _flipDuration = 500;
 
   @override
   void initState() {
@@ -53,7 +53,7 @@ class _HomePageState extends State<HomePage>
     _isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
 
     return Scaffold(
-      appBar: _isPortrait! && !kIsWeb
+      appBar: _isPortrait && !kIsWeb
           ? AppBar(
               title: const Text("Card Game"),
               actions: [
@@ -73,7 +73,7 @@ class _HomePageState extends State<HomePage>
             height: _deviceHeight,
             width: _deviceWidth,
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-            child: _isPortrait! || (kIsWeb && _deviceHeight > 520)
+            child: _isPortrait || (kIsWeb && _deviceHeight > 520)
                 // Portrait/Web
                 ? _portraitLayout()
                 // Landscape
